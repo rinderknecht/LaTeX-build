@@ -1,6 +1,6 @@
-# A GNU Makefile for building LaTeX-based documents
+# A GNU Makefile for building LaTeX documents
 
-The makefile in this directory automates the building of LaTeX-based
+The makefile in this directory automates the building of LaTeX
 documents, with minimal user input. In particular, it can handle the
 making of figures, bibliographic entries with BibTeX, indexes with
 MakeIndex, and different output formats, like DVI, PostScript and
