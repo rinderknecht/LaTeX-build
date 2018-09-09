@@ -95,6 +95,23 @@ SRC := ${TEX:%=%.tex} ${ETC} ${BIB:%=%.bib}
 
 .DEFAULT_GOAL := ${DOC}.dvi
 
+# Tracing
+
+export TRACE
+
+# Preparing the build script (may remain empty if no TRACE=yes)
+
+define sync
+printf "#!/bin/sh\nset -x\n" > build.sh
+endef
+
+.PHONY: sync
+sync:
+> ${call sync}
+
+clean::
+> rm -f build.sh
+
 # Paper orientation (default is "portrait")
 
 ifeq (${ORIENT},landscape)
@@ -348,16 +365,20 @@ endef
 #   ${3}: PostScript file (target)
 
 define dvips
-dvips ${1} -o ${3} ${2} > /dev/null 2>&1
-num_of_pages=$$(sed -En 's|%%Pages: ([^ ]+).*|\1|p' ${3} \
-                | head -n 1)
-size=$$(ls -hAl ${3} | tr -s ' ' | cut -d ' ' -f 5)
-if test "$$num_of_pages" = "1" -o -z "$$num_of_pages"
-then printf " done (1 page, $$size bytes)"
-elif test -n "$$num_of_pages"
-then printf " done ($$num_of_pages pages, $$size bytes)"
-fi
-echo "."
+  if test "${TRACE}" = "yes"; then
+    echo "dvips ${1} -o ${3} ${2}" \
+  | tr -s  ' ' >> build.sh
+  fi
+  dvips ${1} -o ${3} ${2} > /dev/null 2>&1
+  num_of_pages=$$(sed -En 's|%%Pages: ([^ ]+).*|\1|p' ${3} \
+                  | head -n 1)
+  size=$$(ls -hAl ${3} | tr -s ' ' | cut -d ' ' -f 5)
+  if test "$$num_of_pages" = "1" -o -z "$$num_of_pages"
+  then printf " done (1 page, $$size bytes)"
+  elif test -n "$$num_of_pages"
+  then printf " done ($$num_of_pages pages, $$size bytes)"
+  fi
+  echo "."
 endef
 
 # Calling dvipdfm(x)
@@ -365,12 +386,16 @@ endef
 #   ${2}: PDF file (target)
 
 define dvipdfm
-msg=$$(dvipdfm -e -p a4 ${if ${PP},-s ${PP}} -o ${2} ${1} 2>&1 \
-       | sed -n 's|^\(.*\) bytes written|\1|p')
-if test -n "$$msg"
-then echo " done ($$msg bytes)."
-else echo " FAILED."
-fi
+  if test "${TRACE}" = "yes"; then
+    echo "dvipdfm -e -p a4 ${if ${PP},-s ${PP}} -o ${2} ${1}" \
+  | tr -s  ' ' >> build.sh
+  fi
+  msg=$$(dvipdfm -e -p a4 ${if ${PP},-s ${PP}} -o ${2} ${1} 2>&1 \
+         | sed -n 's|^\(.*\) bytes written|\1|p')
+  if test -n "$$msg"
+  then echo " done ($$msg bytes)."
+  else echo " FAILED."
+  fi
 endef
 
 # Calling ps2pdf
@@ -378,53 +403,63 @@ endef
 #   ${2}: PDF file (target)
 
 define ps2pdf
-ps2pdf -dSubsetFonts=true -dEmbedAllFonts=true \
-       -sPAPERSIZE=a4 ${1} ${2} > /dev/null 2>&1
-size=$$(ls -hAl ${2} | tr -s ' ' | cut -d ' ' -f 5)
-echo " done ($$size bytes)."
+  if test "${TRACE}" = "yes"; then
+    echo "ps2pdf -dSubsetFonts=true -dEmbedAllFonts=true \
+         -sPAPERSIZE=a4 ${1} ${2}" \
+  | tr -s  ' ' >> build.sh
+  fi
+  ps2pdf -dSubsetFonts=true -dEmbedAllFonts=true \
+         -sPAPERSIZE=a4 ${1} ${2} > /dev/null 2>&1
+  size=$$(ls -hAl ${2} | tr -s ' ' | cut -d ' ' -f 5)
+  echo " done ($$size bytes)."
 endef
 
 # Detecting possible need for a last run of LaTeX
 
 define may_run
-if grep -q "There were undefined references" ${DOC}.log
-then ${call mk_dvi}
-elif grep -q "Rerun to get cross-references right" ${DOC}.log
-then ${call mk_dvi}
-elif grep -q "Citation .* undefined" ${DOC}.log
-then ${call mk_dvi}
-fi
+  if grep -q "There were undefined references" ${DOC}.log
+  then ${call mk_dvi}
+  elif grep -q "Rerun to get cross-references right" ${DOC}.log
+  then ${call mk_dvi}
+  elif grep -q "Citation .* undefined" ${DOC}.log
+  then ${call mk_dvi}
+  fi
 endef
 
 # Calling latex or pdflatex
 #   ${1}: Main LaTeX document basename
 
 define common_latex
-${1} ${TEX_OPT} ${TEX_DEF} ${2}.tex >/dev/null 2>&1
-if test "$$?" = "0"
-then data=$$(sed -n 's|.*\(([0-9].*)\)\.|\1|p' ${2}.log)
-     if test -n "$$data"; \
-     then echo " done $$data."; \
-     else printf " FAILED:\n[W] No pages of output.\n"
-     fi
-elif test "${DOC}" = "${2}"
-  then printf " FAILED:\nRun [make diag] for diagnostics.\n"
-  else printf " FAILED:\nRun [decrypt.sh ${2}.log] for diagnostics.\n"
-fi
+  if test "${TRACE}" = "yes"; then
+    # TO DO: Preserve backslash in the expansion of ${TEX_DEF}
+    echo "${1} ${TEX_OPT} ${2}.tex" \
+  | tr -s  ' ' >> build.sh
+  fi
+  ${1} ${TEX_OPT} ${TEX_DEF} ${2}.tex >/dev/null 2>&1
+  if test "$$?" = "0"
+  then data=$$(sed -n 's|.*\(([0-9].*)\)\.|\1|p' ${2}.log)
+       if test -n "$$data"; \
+       then echo " done $$data."; \
+       else printf " FAILED:\n[W] No pages of output.\n"
+       fi
+  elif test "${DOC}" = "${2}"
+    then printf " FAILED:\nRun [make diag] for diagnostics.\n"
+    else printf " FAILED:\nRun [decrypt.sh ${2}.log] for diagnostics.\n"
+  fi
 endef
 
 # Running LaTeX
 #   ${1}: Main LaTeX document basename
 
 define latex
-${call common_latex,latex,${1},dvi}
+  ${call common_latex,latex,${1},dvi}
 endef
 
 # Calling pdflatex
 #   ${1}: Main LaTeX document basename
 
 define pdflatex
-${call common_latex,pdflatex,${1},pdf}
+  ${call common_latex,pdflatex,${1},pdf}
 endef
 
 # Sequence mk_dvi is called inside a shell command, so it must be one
@@ -474,17 +509,27 @@ fi
 endef
 
 define eps_of_fig
-printf "Converting $< to EPSF..."
-fig2dev -L eps $< $@ 2>&1
-if test "$$?" = "0"; then echo " done."; else echo " FAILED."; fi
-${call record_fig,$@}
+  printf "Converting $< to EPSF..."
+  if test "${TRACE}" = "yes"; then
+    echo "fig2dev -L eps $< $@" | tr -s  ' ' >> build.sh
+  fi
+  fig2dev -L eps $< $@ 2>&1
+  if test "$$?" = "0"; then echo " done."
+  else echo " FAILED."
+  fi
+  ${call record_fig,$@}
 endef
 
 define convert_to_EPSF
-printf "Converting $< to EPSF..."
-convert $< $@ 2>&1
-if test "$$?" = "0"; then echo " done."; else echo " FAILED."; fi
-${call record_fig,$@}
+  printf "Converting $< to EPSF..."
+  if test "${TRACE}" = "yes"; then
+    echo "convert $< $@" | tr -s  ' ' >> build.sh
+  fi
+  convert $< $@ 2>&1
+  if test "$$?" = "0"; then echo " done."
+  else echo " FAILED."
+  fi
+  ${call record_fig,$@}
 endef
 
 ${DVI_FIG}: %.dvi: %.tex
@@ -521,21 +566,28 @@ ${SRC}:
 endif
 
 define mk_idx
-printf "Collating the index..."
-makeindex -c -q ${DOC} 2>&1
-printf " done "
-if test -e ${DOC}.ilg
-then
-stat=$$(sed -n "s|.* \((.* entries accepted, .* rejected\).*|\1|p" \
+  printf "Collating the index..."
+  if test "${TRACE}" = "yes"; then
+    echo "makeindex -c -q ${DOC}" | tr -s  ' ' >> build.sh
+  fi
+  makeindex -c -q ${DOC} 2>&1
+  printf " done "
+  if test -e ${DOC}.ilg
+  then
+    stat=$$(sed -n "s|.* \((.* entries accepted, .* rejected\).*|\1|p" \
             ${DOC}.ilg)
-  printf "$$stat"
-  warn=$$(sed -n 's|.* \(.* warnings).\)|\1|p' ${DOC}.ilg)
-  if test -n "$$warn"; then echo ", $$warn"; else echo ")."; fi
-fi
+    printf "$$stat"
+    warn=$$(sed -n 's|.* \(.* warnings).\)|\1|p' ${DOC}.ilg)
+    if test -n "$$warn"; then echo ", $$warn"; else echo ")."; fi
+  fi
 endef
 
 define mk_bbl
 printf "Processing bibliography ${BIB:%=%.bib}..."
+if test "${TRACE}" = "yes"; then
+  echo "bibtex -terse -min-crossrefs=2 ${DOC}" \
+| tr -s  ' ' >> build.sh
+fi
 bibtex -terse -min-crossrefs=2 ${DOC} > /dev/null
 printf " done"
 entries=$$(sed -nE "s/.*used (.*) (entries|entry).*/\1/p" \
@@ -568,7 +620,7 @@ ${DOC}.bbl: ${BIB:%=%.bib} ${DOC}.dvi0
 
 ifeq (${BIB},)
   ifeq (${IDX},yes) # No bib, one index
-${DOC}.dvi: ${DOC}.dvi0
+${DOC}.dvi: sync ${DOC}.dvi0
 > ${call mk_idx}
 > ${call mrg_idx}
   else # No bib, no index
