@@ -484,6 +484,18 @@ endef
 
 # Making figures
 
+# Let an arrow be oriented in the direction of increasing values of
+# its label. Then, if we have %%BoundingBox a b c d
+#
+#              ^
+#              |d
+#  a   -----------------  c
+# --->|                 |--->
+#      -----------------
+#              ^
+#              | b
+#
+
 define record_fig
 if test -e ${1}
 then sed -i.old "/^${1}$$/d" .fig 2> /dev/null
