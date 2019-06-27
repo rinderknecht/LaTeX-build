@@ -372,7 +372,7 @@ define dvips
   dvips ${1} -o ${3} ${2} > /dev/null 2>&1
   num_of_pages=$$(sed -En 's|%%Pages: ([^ ]+).*|\1|p' ${3} \
                   | head -n 1)
-  size=$$(ls -hAl ${3} | tr -s ' ' | cut -d ' ' -f 5 | sed -n 's|,|.|p')
+  size=$$(ls -hAl ${3} | tr -s ' ' | cut -d ' ' -f 5 | sed 's|,|.|p')
   if test "$$num_of_pages" = "1" -o -z "$$num_of_pages"
   then printf " done (1 page, $$size bytes)"
   elif test -n "$$num_of_pages"
@@ -392,7 +392,7 @@ define dvipdfm
   fi
   msg=$$(dvipdfm -e -p a4 ${if ${PP},-s ${PP}} -o ${2} ${1} 2>&1 \
          | sed -n -e 's|^\(.*\) bytes written|\1|p' \
-                  -e 's|,|.|n')
+         | sed 's|,|.|g')
   if test -n "$$msg"
   then echo " done ($$msg bytes)."
   else echo " FAILED."
@@ -411,7 +411,7 @@ define ps2pdf
   fi
   ps2pdf -dSubsetFonts=true -dEmbedAllFonts=true \
          -sPAPERSIZE=a4 ${1} ${2} > /dev/null 2>&1
-  size=$$(ls -hAl ${2} | tr -s ' ' | cut -d ' ' -f 5 | sed -n 's|,|.|p')
+  size=$$(ls -hAl ${2} | tr -s ' ' | cut -d ' ' -f 5 | sed 's|,|.|p')
   echo " done ($$size bytes)."
 endef
 
