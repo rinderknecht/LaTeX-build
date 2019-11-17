@@ -16,7 +16,7 @@ endif
 
 # Setting the flags of GNU Make (no built-in rules, silent)
 
-MAKEFLAGS =-Rrs
+MAKEFLAGS =-Rrsi
 
 # Setting some variables of GNU Make
 
@@ -30,10 +30,6 @@ MAKEFLAGS =-Rrs
 Makefile GNUmakefile makefile Makefile.cfg: ;
 
 %.tex:: ;
-
-# Setting the flags of GNU Make (no built-in rules, silent)
-
-MAKEFLAGS =-Rrsi
 
 # More special targets
 #
