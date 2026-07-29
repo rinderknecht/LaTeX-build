@@ -39,7 +39,7 @@ Makefile GNUmakefile makefile Makefile.cfg: ;
 
 # Checking system configuration (for debugging purposes)
 
-CMD := "bibtex convert dvipdfm dvips erlc fig2dev grep gs latex \
+CMD := "bibtex convert dvipdfmx dvips erlc fig2dev grep gs latex \
         makeindex pdflatex ps2pdf sed xmllint decrypt.sh"
 
 define chk_cfg
@@ -377,16 +377,16 @@ define dvips
   echo "."
 endef
 
-# Calling dvipdfm(x)
+# Calling dvipdfmx
 #   ${1}: DVI file (source)
 #   ${2}: PDF file (target)
 
-define dvipdfm
+define dvipdfmx
   if test "${TRACE}" = "yes"; then
-    echo "dvipdfm -e -p a4 ${if ${PP},-s ${PP}} -o ${2} ${1}" \
+    echo "dvipdfmx -p a4 ${if ${PP},-s ${PP}} -o ${2} ${1}" \
   | tr -s  ' ' >> build.sh
   fi
-  msg=$$(dvipdfm -e -p a4 ${if ${PP},-s ${PP}} -o ${2} ${1} 2>&1 \
+  msg=$$(dvipdfmx -p a4 ${if ${PP},-s ${PP}} -o ${2} ${1} 2>&1 \
          | sed -n -e 's|^\(.*\) bytes written|\1|p' \
          | sed 's|,|.|g')
   if test -n "$$msg"
@@ -520,7 +520,7 @@ endef
 define eps_of_fig
   printf "Converting $< to EPSF..."
   if test "${TRACE}" = "yes"; then
-    echo "fig2dev -L eps $< $@" | tr -s  ' ' >> build.sh
+    echo "fig2dev -L eps $< $@" | tr -s ' ' >> build.sh
   fi
   fig2dev -L eps $< $@ 2>&1
   if test "$$?" = "0"; then echo " done."
@@ -532,7 +532,7 @@ endef
 define convert_to_EPSF
   printf "Converting $< to EPSF..."
   if test "${TRACE}" = "yes"; then
-    echo "convert $< $@" | tr -s  ' ' >> build.sh
+    echo "convert $< $@" | tr -s ' ' >> build.sh
   fi
   convert $< $@ 2>&1
   if test "$$?" = "0"; then echo " done."
@@ -674,7 +674,7 @@ ${DOC}.pdf: ${DOC}.ps
 else
 ${DOC}.pdf: ${DOC}.dvi
 > printf "Making $@ from $<..."
-> ${call dvipdfm,$<,$@}
+> ${call dvipdfmx,$<,$@}
 endif
 
 doc:
