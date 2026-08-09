@@ -383,10 +383,10 @@ endef
 
 define dvipdfmx
   if test "${TRACE}" = "yes"; then
-    echo "dvipdfmx -p a4 ${if ${PP},-s ${PP}} -o ${2} ${1}" \
+    echo "dvipdfmx ${if ${PP},-s ${PP}} -o ${2} ${1}" \
   | tr -s  ' ' >> build.sh
   fi
-  msg=$$(dvipdfmx -p a4 ${if ${PP},-s ${PP}} -o ${2} ${1} 2>&1 \
+  msg=$$(dvipdfmx ${if ${PP},-s ${PP}} -o ${2} ${1} 2>&1 \
          | sed -n -e 's|^\(.*\) bytes written|\1|p' \
          | sed 's|,|.|g')
   if test -n "$$msg"
