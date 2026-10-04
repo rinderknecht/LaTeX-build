@@ -1,5 +1,5 @@
 # GNU Makefile (>= 4.0) for building LaTeX-based documents
-# (c) 2012-2018, Christian Rinderknecht (rinderknecht@free.fr)
+# (c) 2012-2026, Christian Rinderknecht (rinderknecht@free.fr)
 #
 # ====================================================================
 # General Settings (GNU Make 4.1 recommended)
@@ -40,7 +40,7 @@ Makefile GNUmakefile makefile Makefile.cfg: ;
 # Checking system configuration (for debugging purposes)
 
 CMD := "bibtex convert dvipdfmx dvips erlc fig2dev grep gs latex \
-        makeindex pdflatex ps2pdf sed xmllint decrypt.sh"
+        makeindex pdflatex ps2eps ps2pdf sed xmllint decrypt.sh"
 
 define chk_cfg
 IFS=':'
@@ -127,7 +127,7 @@ ALL_FIG := ${shell normal=; \
   for graphics in ${FIG}; do \
     case $$graphics in \
       *.pdf|*.jpg|*.png|*.eps|*.ps) normal="$$normal $$graphics";; \
-               *) normal="$$normal $$graphics.ps";; \
+                                 *) normal="$$normal $$graphics.ps";; \
     esac; \
   done; \
   echo $$normal | tr ' ' '\n' | sort -d | uniq \
